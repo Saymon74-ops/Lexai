@@ -7,17 +7,10 @@ export default function Overview() {
   const { alunoData } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const { data: provas } = useSupabaseData<any>('provas');
-  const { data: questoes } = useSupabaseData<any>('questoes_respondidas');
-  const { data: materiais } = useSupabaseData<any>('materiais');
-  
+
   const today = new Date();
   
   // Real dashboard calculations
-  const questoesCount = questoes?.length || 0;
-  const taxaAcerto = questoes?.length 
-    ? Math.round((questoes.filter((q: any) => q.acertou).length / questoes.length) * 100) 
-    : 0;
-  const resumosCount = materiais?.filter((m: any) => m.tipo === 'resumo').length || 0;
 
   // Dados reais do Supabase para dias estudados
   const studyDays = useMemo(() => {
