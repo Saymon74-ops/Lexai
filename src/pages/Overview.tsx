@@ -56,6 +56,14 @@ export default function Overview() {
     return 'Direito Penal';
   };
 
+  const { data: questoesRespondidas, loading: loadingQuestoes } = useSupabaseData<any>('questoes_respondidas');
+  const { data: materiais, loading: loadingMateriais } = useSupabaseData<any>('materiais');
+
+  const totalQuestoesResolvidas = questoesRespondidas?.length || 0;
+  const acertos = questoesRespondidas?.filter(q => q.acertou)?.length || 0;
+  const taxaAcerto = totalQuestoesResolvidas > 0 ? Math.round((acertos / totalQuestoesResolvidas) * 100) : 0;
+  const resumosGerados = materiais?.length || 0;
+
   const nextExam = getNextExam();
   const studySuggestion = getStudySuggestion();
   const studiedDaysThisMonth = studyDays.length;
@@ -186,10 +194,30 @@ export default function Overview() {
       {/* Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { title: 'Questões Resolvidas', value: '342', icon: Target, trend: '+12% esta semana' },
-          { title: 'Taxa de Acerto', value: '78%', icon: Award, trend: '+5% que o mês passado' },
-          { title: 'Resumos Gerados', value: '45', icon: Clock, trend: '12 novos' },
-          { title: 'Próxima Prova', value: nextExam ? `${nextExam.dias} dias` : 'Nenhuma', icon: Calendar, trend: nextExam?.materia || 'Agendada' },
+          {
+            title: 'Questões Resolvidas',
+            value: loadingQuestoes ? '...' : totalQuestoesResolvidas.toString(),
+            icon: Target,
+            trend: loadingQuestoes ? 'Carregando...' : 'Base real de respostas'
+          },
+          {
+            title: 'Taxa de Acerto',
+            value: loadingQuestoes ? '...' : `${taxaAcerto}%`,
+            icon: Award,
+            trend: loadingQuestoes ? 'Carregando...' : 'Cálculo do acerto real'
+          },
+          {
+            title: 'Resumos Gerados',
+            value: loadingMateriais ? '...' : resumosGerados.toString(),
+            icon: Clock,
+            trend: loadingMateriais ? 'Carregando...' : 'Total no Supabase'
+          },
+          {
+            title: 'Próxima Prova',
+            value: nextExam ? `${nextExam.dias} dias` : 'Nenhuma',
+            icon: Calendar,
+            trend: nextExam?.materia || 'Agendada'
+          },
         ].map((metric, i) => (
           <div key={i} className="bg-[#202024] border border-zinc-800 rounded-xl p-5 hover:border-yellow-500/50 transition-colors group">
             <div className="flex items-center justify-between mb-4">
