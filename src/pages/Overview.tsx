@@ -7,26 +7,56 @@ export default function Overview() {
   const { alunoData } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const { data: provas } = useSupabaseData<any>('provas');
+  const { data: questoesRespondidas, loading: loadingQuestoes } = useSupabaseData<any>('questoes_respondidas');
+  const { data: materiais, loading: loadingMateriais } = useSupabaseData<any>('materiais');
 
   const today = new Date();
-  
-  // Real dashboard calculations
 
-  // Dados reais do Supabase para dias estudados
-  const studyDays = useMemo(() => {
-    // Simulação - em produção viria de uma tabela de sessões de estudo
-    const days = [];
-    for (let i = 0; i < 31; i++) {
-      const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i + 1);
-      if (date <= today) {
-        days.push({
-          date,
-          sessions: Math.floor(Math.random() * 4) + (Math.random() > 0.3 ? 1 : 0) // 70% chance de ter estudo
-        });
+  // Dados reais do Supabase para dias de estudo, baseados em 'questoes_respondidas'
+  const sessionsByDay = useMemo(() => {
+    const map = new Map<string, { date: Date; sessions: number }>();
+
+    questoesRespondidas?.forEach((item: any) => {
+      if (!item.created_at) return;
+      const date = new Date(item.created_at);
+      const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+
+      const existing = map.get(key);
+      if (existing) {
+        existing.sessions += 1;
+      } else {
+        map.set(key, { date, sessions: 1 });
       }
+    });
+
+    return map;
+  }, [questoesRespondidas]);
+
+  const studyDays = useMemo(() => Array.from(sessionsByDay.values()), [sessionsByDay]);
+
+  const getWeekDays = () => {
+    const currentDayOfWeek = today.getDay();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - currentDayOfWeek);
+
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(startOfWeek);
+      date.setDate(startOfWeek.getDate() + i);
+      const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+      const sessions = sessionsByDay.get(key)?.sessions || 0;
+
+      days.push({
+        dayOfWeek: i,
+        date,
+        sessions,
+        isToday: date.toDateString() === today.toDateString(),
+        isFuture: date > today
+      });
     }
-    return days.filter(d => d.sessions > 0);
-  }, [currentMonth]);
+    return days;
+  };
+  
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -51,54 +81,39 @@ export default function Overview() {
     return { materia: nextExam.materia, dias: diffDays, nome: nextExam.nome };
   };
 
-  const getStudySuggestion = () => {
-    // Simulação - em produção seria baseado no progresso real
-    return 'Direito Penal';
-  };
+  const subjectProgress = useMemo(() => {
+    const progressMap = new Map<string, { acertos: number; total: number }>();
+    questoesRespondidas?.forEach((q: any) => {
+      const disciplina = q.disciplina || 'Sem disciplina';
+      const entry = progressMap.get(disciplina) || { acertos: 0, total: 0 };
+      entry.total += 1;
+      if (q.acertou) entry.acertos += 1;
+      progressMap.set(disciplina, entry);
+    });
 
-  const { data: questoesRespondidas, loading: loadingQuestoes } = useSupabaseData<any>('questoes_respondidas');
-  const { data: materiais, loading: loadingMateriais } = useSupabaseData<any>('materiais');
+    return Array.from(progressMap.entries())
+      .map(([disciplina, stats]) => ({
+        disciplina,
+        total: stats.total,
+        acertos: stats.acertos,
+        percentual: stats.total > 0 ? Math.round((stats.acertos / stats.total) * 100) : 0
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [questoesRespondidas]);
 
   const totalQuestoesResolvidas = questoesRespondidas?.length || 0;
   const acertos = questoesRespondidas?.filter(q => q.acertou)?.length || 0;
   const taxaAcerto = totalQuestoesResolvidas > 0 ? Math.round((acertos / totalQuestoesResolvidas) * 100) : 0;
   const resumosGerados = materiais?.length || 0;
 
-  const nextExam = getNextExam();
-  const studySuggestion = getStudySuggestion();
-  const studiedDaysThisMonth = studyDays.length;
+  const studySuggestion = subjectProgress.length > 0 ? `Revisar ${subjectProgress[0].disciplina}` : null;
 
-  // Calcula dados para o gráfico semanal
-  const getWeekDays = () => {
-    const currentDayOfWeek = today.getDay(); // 0=Dom, 6=Sáb
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - currentDayOfWeek);
-    
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
-      
-      const studyData = studyDays.find(d => 
-        d.date.getDate() === date.getDate() && 
-        d.date.getMonth() === date.getMonth() && 
-        d.date.getFullYear() === date.getFullYear()
-      );
-      
-      days.push({
-        dayOfWeek: i,
-        date,
-        sessions: studyData?.sessions || 0,
-        isToday: date.toDateString() === today.toDateString(),
-        isFuture: date > today
-      });
-    }
-    return days;
-  };
+  const nextExam = getNextExam();
+  const studiedDaysThisMonth = studyDays.filter(d => d.date.getMonth() === currentMonth.getMonth() && d.date.getFullYear() === currentMonth.getFullYear()).length;
 
   const weekDays = useMemo(() => getWeekDays(), [studyDays]);
   const studiedDaysThisWeek = weekDays.filter(d => d.sessions > 0 && !d.isFuture).length;
-  const maxSessionsWeek = Math.max(...weekDays.map(d => d.sessions), 5); // minimo de 5 pra escala
+  const maxSessionsWeek = Math.max(...weekDays.map(d => d.sessions), 5); // mínimo de 5 pra escala
   
   // Animação de entrada
   const [chartLoaded, setChartLoaded] = useState(false);
@@ -179,16 +194,18 @@ export default function Overview() {
             </div>
           </div>
         )}
-        
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <Target className="w-5 h-5 text-blue-500" />
-            <div>
-              <p className="text-blue-400 font-medium">Sugestão de estudo hoje</p>
-              <p className="text-blue-300 text-sm">Que tal revisar {studySuggestion}?</p>
+
+        {studySuggestion && (
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <Target className="w-5 h-5 text-blue-500" />
+              <div>
+                <p className="text-blue-400 font-medium">Sugestão de estudo hoje</p>
+                <p className="text-blue-300 text-sm">{studySuggestion}</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Metric Cards */}
@@ -334,10 +351,9 @@ export default function Overview() {
           
           <div className="flex items-end justify-between gap-2 h-48 mt-8 pt-4 border-t border-zinc-800/50">
             {weekDays.map((day, i) => {
-              // Altura minima visual para empty = 10%
               const heightPercent = day.sessions > 0 
                 ? Math.max((day.sessions / maxSessionsWeek) * 100, 15)
-                : 10;
+                : 0;
               
               return (
                 <div key={i} className="flex flex-col items-center gap-3 flex-1 group">
@@ -370,51 +386,24 @@ style={{ height: chartLoaded ? `${heightPercent}%` : '0%' }}                  >
         <div className="bg-[#202024] border border-zinc-800 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-zinc-50 mb-6">Progresso por Matéria</h2>
           <div className="space-y-6">
-            
-            {/* Matéria 1 */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-zinc-300">Direito Constitucional</span>
-                <span className="text-sm font-bold text-green-500">80%</span>
-              </div>
-              <div className="w-full bg-[#121214] border border-zinc-800 rounded-full h-2">
-                <div className="bg-green-500 h-1.5 mt-px ml-px rounded-full shadow-[0_0_10px_rgba(34,197,94,0.4)]" style={{ width: '80%' }}></div>
-              </div>
-            </div>
-
-            {/* Matéria 2 */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-zinc-300">Direito Penal</span>
-                <span className="text-sm font-bold text-yellow-500">60%</span>
-              </div>
-              <div className="w-full bg-[#121214] border border-zinc-800 rounded-full h-2">
-                <div className="bg-yellow-500 h-1.5 mt-px ml-px rounded-full shadow-[0_0_10px_rgba(234,179,8,0.4)]" style={{ width: '60%' }}></div>
-              </div>
-            </div>
-
-            {/* Matéria 3 */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-zinc-300">Direito Civil</span>
-                <span className="text-sm font-bold text-red-500">40%</span>
-              </div>
-              <div className="w-full bg-[#121214] border border-zinc-800 rounded-full h-2">
-                <div className="bg-red-500 h-1.5 mt-px ml-px rounded-full shadow-[0_0_10px_rgba(239,68,68,0.4)]" style={{ width: '40%' }}></div>
-              </div>
-            </div>
-
-            {/* Matéria 4 */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-zinc-300">Direito Administrativo</span>
-                <span className="text-sm font-bold text-blue-500">95%</span>
-              </div>
-              <div className="w-full bg-[#121214] border border-zinc-800 rounded-full h-2">
-                <div className="bg-blue-500 h-1.5 mt-px ml-px rounded-full shadow-[0_0_10px_rgba(59,130,246,0.4)]" style={{ width: '95%' }}></div>
-              </div>
-            </div>
-
+            {subjectProgress.length === 0 ? (
+              <div className="text-center text-zinc-400">Nenhum progresso por matéria registrado ainda.</div>
+            ) : (
+              subjectProgress.map((item) => (
+                <div key={item.disciplina}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-zinc-300">{item.disciplina}</span>
+                    <span className="text-sm font-bold text-green-500">{item.percentual}%</span>
+                  </div>
+                  <div className="w-full bg-[#121214] border border-zinc-800 rounded-full h-2">
+                    <div
+                      className="bg-green-500 h-1.5 mt-px ml-px rounded-full"
+                      style={{ width: `${item.percentual}%` }}
+                    />
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

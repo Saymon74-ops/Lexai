@@ -8,13 +8,7 @@ import { ptBR } from 'date-fns/locale';
 export default function HistoricoWhatsApp() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
 
-  const mensagens = [
-    { id: 1, sender: 'bot', text: 'Olá! Sou a LexIA. Que matéria vamos estudar hoje?', time: '10:00 AM', date: 'Hoje' },
-    { id: 2, sender: 'user', text: 'Quero revisar Direito Administrativo, focado em Licitações.', time: '10:05 AM', date: 'Hoje' },
-    { id: 3, sender: 'bot', text: 'Perfeito! A Nova Lei de Licitações (Lei 14.133/21) trouxe mudanças importantes. Você prefere um resumo em tópicos ou algumas questões difíceis da FGV?', time: '10:05 AM', date: 'Hoje' },
-    { id: 4, sender: 'user', text: 'Mande questões.', time: '10:10 AM', date: 'Hoje' },
-    { id: 5, sender: 'bot', text: 'Questão 1: Sobre as modalidades de licitação na Lei 14.133/21, o diálogo competitivo é aplicável em qual das seguintes situações?\n\nA) Compras de pequeno valor\nB) Inovação tecnológica ou técnica\nC) Obras de engenharia comuns\nD) Pregão eletrônico obrigatório', time: '10:11 AM', date: 'Hoje' },
-  ];
+  const mensagens: Array<{ id: number; sender: 'bot' | 'user'; text: string; time: string; date: string }> = [];
 
   const CustomDateInput = ({ onClick }: any) => (
     <button 
@@ -67,26 +61,34 @@ export default function HistoricoWhatsApp() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-transparent">
-          {mensagens.map((msg) => {
-            const isBot = msg.sender === 'bot';
-            return (
-              <div key={msg.id} className={`flex max-w-2xl ${isBot ? 'mr-auto' : 'ml-auto flex-row-reverse'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isBot ? 'mr-3 bg-yellow-500/10 text-yellow-500' : 'ml-3 bg-[#121214] border border-zinc-800 text-zinc-400'}`}>
-                  {isBot ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
+          {mensagens.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center px-6 py-12 text-zinc-400 border-2 border-dashed border-zinc-700 rounded-xl">
+              <MessageSquare className="w-12 h-12 text-zinc-500 mb-4" />
+              <h3 className="text-lg font-semibold text-zinc-100 mb-2">Nenhuma conversa ainda</h3>
+              <p className="text-sm text-zinc-400">Comece estudando pelo WhatsApp!</p>
+            </div>
+          ) : (
+            mensagens.map((msg) => {
+              const isBot = msg.sender === 'bot';
+              return (
+                <div key={msg.id} className={`flex max-w-2xl ${isBot ? 'mr-auto' : 'ml-auto flex-row-reverse'}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isBot ? 'mr-3 bg-yellow-500/10 text-yellow-500' : 'ml-3 bg-[#121214] border border-zinc-800 text-zinc-400'}`}>
+                    {isBot ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
+                  </div>
+                  <div className={`p-4 rounded-xl shadow-sm ${
+                    isBot 
+                      ? 'bg-[#121214] border border-zinc-800 text-zinc-300 rounded-tl-none' 
+                      : 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-50 rounded-tr-none'
+                  }`}>
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                    <span className={`text-[10px] mt-2 block ${isBot ? 'text-zinc-500' : 'text-yellow-500/60 text-right'}`}>
+                      {msg.time}
+                    </span>
+                  </div>
                 </div>
-                <div className={`p-4 rounded-xl shadow-sm ${
-                  isBot 
-                    ? 'bg-[#121214] border border-zinc-800 text-zinc-300 rounded-tl-none' 
-                    : 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-50 rounded-tr-none'
-                }`}>
-                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.text}</p>
-                  <span className={`text-[10px] mt-2 block ${isBot ? 'text-zinc-500' : 'text-yellow-500/60 text-right'}`}>
-                    {msg.time}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
         
         <div className="p-4 bg-[#121214] border-t border-zinc-800 mt-auto">
