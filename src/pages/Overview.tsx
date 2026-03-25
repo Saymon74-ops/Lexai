@@ -1,4 +1,4 @@
-import { Calendar, Target, Award, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Target, Award, Clock, ChevronLeft, ChevronRight, Scale } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSupabaseData } from '../hooks/useSupabaseData';
@@ -78,7 +78,7 @@ export default function Overview() {
     const diffTime = new Date(nextExam.data_prova).getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    return { materia: nextExam.materia, dias: diffDays, nome: nextExam.nome };
+    return { materia: nextExam.materia, dias: diffDays, nome: nextExam.nome, data_prova: nextExam.data_prova };
   };
 
   const subjectProgress = useMemo(() => {
@@ -118,6 +118,7 @@ export default function Overview() {
   // Banner de instalação PWA
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [chartLoaded, setChartLoaded] = useState(false);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: any) => {
@@ -174,6 +175,12 @@ export default function Overview() {
       }, 10000); // 10 segundos após carregar
     }
   }, [nextExam, today]);
+
+  // Animação do gráfico
+  useEffect(() => {
+    const timer = setTimeout(() => setChartLoaded(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     setCurrentMonth(prev => {
