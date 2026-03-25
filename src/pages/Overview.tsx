@@ -162,17 +162,30 @@ export default function Overview() {
     }
 
     // Notificação diária de estudo
-    const lastNotification = localStorage.getItem('lastStudyNotification');
-    const todayStr = today.toDateString();
-    if (lastNotification !== todayStr) {
-      setTimeout(() => {
-        new Notification('Hora de estudar!', {
-          body: 'Que tal revisar uma matéria hoje?',
-          icon: '/icon.svg',
-          badge: '/icon.svg'
-        });
-        localStorage.setItem('lastStudyNotification', todayStr);
-      }, 10000); // 10 segundos após carregar
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const notificationTime = localStorage.getItem('studyNotificationTime') || '08:00';
+      const [hours, minutes] = notificationTime.split(':').map(Number);
+      const now = new Date();
+      const nextNotification = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+      if (nextNotification <= now) {
+        nextNotification.setDate(nextNotification.getDate() + 1);
+      }
+      const lastNotification = localStorage.getItem('lastStudyNotification');
+      const todayStr = today.toDateString();
+      if (lastNotification !== todayStr) {
+        const timeToNext = nextNotification.getTime() - now.getTime();
+        setTimeout(() => {
+          const notification = new Notification('Bora estudar!', {
+            body: '📚 Bora estudar! Sua prova não vai passar sozinha.',
+            icon: '/icon.svg',
+            badge: '/icon.svg'
+          });
+          notification.onclick = () => {
+            window.focus();
+          };
+          localStorage.setItem('lastStudyNotification', todayStr);
+        }, timeToNext);
+      }
     }
   }, [nextExam, today]);
 

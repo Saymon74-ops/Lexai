@@ -23,6 +23,10 @@ export default function Chat() {
 
   useEffect(() => {
     loadConversationHistory();
+    // Request notification permission if not granted
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
   }, []);
 
   useEffect(() => {
