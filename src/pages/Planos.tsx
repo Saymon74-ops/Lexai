@@ -31,7 +31,7 @@ export default function Planos() {
           <ul className="mb-8 space-y-3 flex-1 text-zinc-300">
             <li className="flex items-center gap-2"><Check className="w-4 h-4 text-yellow-500" /> Questões ilimitadas</li>
             <li className="flex items-center gap-2"><Check className="w-4 h-4 text-yellow-500" /> IA para resumos avançados</li>
-            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-yellow-500" /> Histórico do WhatsApp</li>
+            <li className="flex items-center gap-2"><Check className="w-4 h-4 text-yellow-500" /> Histórico do Chat IA</li>
           </ul>
           <button className="w-full py-2 bg-yellow-500 hover:bg-yellow-400 text-black rounded-md transition-colors font-bold">
             Assinar Estudante

@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
+import InstallBanner from '../components/InstallBanner';
 
 export default function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
     <div className="flex h-screen bg-[#121214] overflow-hidden font-sans">
+      <InstallBanner />
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 

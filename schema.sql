@@ -55,12 +55,13 @@ CREATE TABLE public.materiais (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
 );
 
--- 4. Tabela de Conversas (Histórico WhatsApp)
+-- 4. Tabela de Conversas (Histórico Chat IA)
 CREATE TABLE public.conversas (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     aluno_id UUID REFERENCES public.alunos(id) ON DELETE CASCADE,
-    mensagem TEXT NOT NULL,
-    origem VARCHAR(50) NOT NULL, -- 'user', 'bot'
+    sender VARCHAR(10) NOT NULL, -- 'user', 'ai'
+    text TEXT NOT NULL,
+    type VARCHAR(20) DEFAULT 'text', -- 'text', 'audio', 'image'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
 );
 

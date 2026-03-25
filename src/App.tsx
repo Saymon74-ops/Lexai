@@ -6,7 +6,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 import Overview from './pages/Overview';
 import Questoes from './pages/Questoes';
 import Materiais from './pages/Materiais';
-import HistoricoWhatsApp from './pages/HistoricoWhatsApp';
+import Chat from './pages/Chat';
 import NotFound from './pages/NotFound';
 import Onboarding from './pages/Onboarding';
 import Perfil from './pages/Perfil';
@@ -31,7 +31,7 @@ function App() {
               <Route path="dashboard" element={<Overview />} />
               <Route path="materiais" element={<Materiais />} />
               <Route path="questoes" element={<Questoes />} />
-              <Route path="whatsapp" element={<HistoricoWhatsApp />} />
+              <Route path="chat" element={<Chat />} />
               <Route path="perfil" element={<Perfil />} />
               <Route path="professores" element={<Professores />} />
               <Route path="provas" element={<Provas />} />

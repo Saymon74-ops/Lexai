@@ -1,10 +1,10 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, MessageSquare, BookOpen, CheckCircle, Scale, LogOut, UserCircle, Users, CalendarClock, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Bot, BookOpen, CheckCircle, Scale, LogOut, UserCircle, Users, CalendarClock, CreditCard } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-  { icon: MessageSquare, label: 'WhatsApp', path: '/whatsapp' },
+  { icon: Bot, label: 'Chat IA', path: '/chat' },
   { icon: BookOpen, label: 'Materiais', path: '/materiais' },
   { icon: CheckCircle, label: 'Questões', path: '/questoes' },
   { icon: CalendarClock, label: 'Próximas Provas', path: '/provas' },
