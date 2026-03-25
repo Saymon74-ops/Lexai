@@ -95,8 +95,23 @@ export default function Chat() {
     await saveMessage(userMessage);
 
     try {
-      // Simulate Claude API response
-      const aiResponse = await simulateAIResponse(text, type);
+      // Call Claude API via Netlify Function
+      const response = await fetch('/.netlify/functions/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [...messages, userMessage], // Include all messages for context
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response from AI');
+      }
+
+      const data = await response.json();
+      const aiResponse = data.response;
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -121,78 +136,6 @@ export default function Chat() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const simulateAIResponse = async (message: string, type: string): Promise<string> => {
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-
-    if (type === 'audio') {
-      return `Olá! Sou a LexIA, sua assistente especializada em Direito brasileiro. 
-
-Analisando o áudio que você enviou, identifiquei os seguintes tópicos principais:
-
-📋 **Tópicos Principais:**
-- Conceitos fundamentais de Direito Constitucional
-- Princípios da Administração Pública
-- Jurisprudência do STF sobre o tema
-
-❓ **Questões no Estilo do Professor:**
-1. Sobre o princípio da legalidade, analise se a atuação da administração pública pode ser considerada válida quando baseada em analogia ou equidade.
-
-2. Discuta a aplicabilidade do princípio da razoabilidade no controle judicial dos atos administrativos.
-
-📖 **Artigos Citados:**
-- Art. 37, caput, da Constituição Federal
-- Art. 2º da Lei 9.784/1999 (Lei do Processo Administrativo)
-- Súmula Vinculante 13 do STF
-
-Precisa de mais detalhes sobre algum desses pontos?`;
-    }
-
-    // Simulate contextual responses based on keywords
-    const lowerMessage = message.toLowerCase();
-    
-    if (lowerMessage.includes('constitucional') || lowerMessage.includes('cf')) {
-      return `Olá! Sou a LexIA, especialista em Direito brasileiro.
-
-Sobre Direito Constitucional, a Constituição Federal de 1988 estabelece os princípios fundamentais do nosso ordenamento jurídico. 
-
-**Pontos importantes:**
-- Supremacia da Constituição
-- Controle de constitucionalidade
-- Direitos fundamentais
-- Separação de poderes
-
-Você gostaria que eu explicasse algum aspecto específico ou gere questões práticas sobre o tema?`;
-    }
-
-    if (lowerMessage.includes('penal') || lowerMessage.includes('crime')) {
-      return `Olá! Sou a LexIA, sua assistente jurídica.
-
-No Direito Penal, o Código Penal brasileiro (Decreto-Lei 2.848/1940) define os crimes e suas penas. 
-
-**Princípios fundamentais:**
-- Legalidade (nullum crimen sine lege)
-- Anterioridade
-- Irretroatividade
-- Interpretação restritiva
-
-Posso ajudar com algum caso específico ou gerar questões sobre tipos penais?`;
-    }
-
-    // Default response
-    return `Olá! Sou a LexIA, assistente especializada em Direito brasileiro. 
-
-Entendi sua pergunta sobre "${message}". Como posso ajudar especificamente? 
-
-Posso:
-- Explicar conceitos jurídicos
-- Gerar questões de prova
-- Analisar casos práticos
-- Criar resumos de matérias
-
-O que você gostaria de saber?`;
   };
 
   const startRecording = async () => {
