@@ -3,11 +3,32 @@ import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 
+interface Prova {
+  id: string
+  data_prova: string
+  materia: string
+  nome: string
+  aluno_id: string
+  created_at?: string
+}
+
+interface CronogramaItem {
+  id: string
+  dias: number
+  materia: string
+  nome: string
+  aluno_id: string
+  data_prova: string
+}
+
 export default function Overview() {
   const { alunoData } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [provas, setProvas] = useState<Prova[]>([]);
+  const [cronograma, setCronograma] = useState<CronogramaItem[]>([]);
   const { data: questoesRespondidas, loading: loadingQuestoes } = useSupabaseData<any>('questoes_respondidas');
   const { data: materiais, loading: loadingMateriais } = useSupabaseData<any>('materiais');
+  const { data: provasData } = useSupabaseData<Prova>('provas');
 
   const today = new Date();
 
@@ -64,9 +85,27 @@ export default function Overview() {
     return 'Boa noite';
   };
 
-  const getNextExam = () => {
-    // Temporariamente removido até a tabela provas ser criada
-    return null;
+  const getNextExam = (): CronogramaItem | null => {
+    if (!provasData || provasData.length === 0) return null;
+    
+    const futureExams = provasData
+      .filter((p) => new Date(p.data_prova) > today)
+      .sort((a, b) => new Date(a.data_prova).getTime() - new Date(b.data_prova).getTime());
+    
+    if (futureExams.length === 0) return null;
+    
+    const nextExam = futureExams[0];
+    const diffTime = new Date(nextExam.data_prova).getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return {
+      id: nextExam.id,
+      dias: diffDays,
+      materia: nextExam.materia,
+      nome: nextExam.nome,
+      aluno_id: nextExam.aluno_id,
+      data_prova: nextExam.data_prova
+    };
   };
 
   const subjectProgress = useMemo(() => {
