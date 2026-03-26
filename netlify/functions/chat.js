@@ -42,10 +42,14 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({ response: aiResponse }),
     };
   } catch (error) {
-    console.error('Error calling Claude API:', error);
+    console.error('Erro completo:', error)
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Internal server error' }),
-    };
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ 
+        error: error.message,
+        details: error.stack 
+      })
+    }
   }
 };

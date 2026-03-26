@@ -12,14 +12,16 @@ interface Message {
 }
 
 export default function Chat() {
-  const { alunoData } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showImageMenu, setShowImageMenu] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadConversationHistory();
@@ -107,6 +109,8 @@ export default function Chat() {
       });
 
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Erro da API:', response.status, errorData)
         throw new Error('Failed to get response from AI');
       }
 
@@ -151,7 +155,7 @@ export default function Chat() {
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-        await processAudio(audioBlob);
+        await processAudio();
         stream.getTracks().forEach(track => track.stop());
       };
 
@@ -169,14 +173,11 @@ export default function Chat() {
     }
   };
 
-  const processAudio = async (audioBlob: Blob) => {
+  const processAudio = async () => {
     setIsLoading(true);
     try {
       // Simulate transcription (in real implementation, use Groq Whisper)
       const simulatedTranscription = "Olá LexIA, preciso de ajuda com Direito Constitucional, especificamente sobre os princípios fundamentais da administração pública.";
-
-      // Send simulated transcription to AI
-      const aiResponse = await simulateAIResponse(simulatedTranscription, 'audio');
 
       const userMessage: Message = {
         id: Date.now().toString(),
@@ -186,6 +187,29 @@ export default function Chat() {
         type: 'audio'
       };
 
+      setMessages(prev => [...prev, userMessage]);
+      await saveMessage(userMessage);
+
+      // Call Claude API via Netlify Function
+      const response = await fetch('/.netlify/functions/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [...messages, userMessage], // Include all messages for context
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Erro da API:', response.status, errorData)
+        throw new Error('Failed to get response from AI');
+      }
+
+      const data = await response.json();
+      const aiResponse = data.response;
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         sender: 'ai',
@@ -194,11 +218,18 @@ export default function Chat() {
         type: 'text'
       };
 
-      setMessages(prev => [...prev, userMessage, aiMessage]);
-      await saveMessage(userMessage);
+      setMessages(prev => [...prev, aiMessage]);
       await saveMessage(aiMessage);
     } catch (err) {
       console.error('Erro ao processar áudio:', err);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: 'ai',
+        text: 'Desculpe, houve um erro ao processar seu áudio. Tente novamente.',
+        timestamp: new Date(),
+        type: 'text'
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -319,19 +350,55 @@ export default function Chat() {
             >
               {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
             </button>
-            <label className="p-2.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white cursor-pointer transition-colors">
-              <Camera className="w-5 h-5" />
+            <div className="relative">
+              <button
+                onClick={() => setShowImageMenu(!showImageMenu)}
+                className="p-2.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+              >
+                <Camera className="w-5 h-5" />
+              </button>
+              {showImageMenu && (
+                <div className="absolute bottom-full right-0 mb-2 bg-[#1a1d24] border border-zinc-700 rounded-lg shadow-lg p-2 z-10">
+                  <button
+                    onClick={() => {
+                      cameraInputRef.current?.click();
+                      setShowImageMenu(false);
+                    }}
+                    className="block w-full text-left px-3 py-2 text-[#c9a84c] hover:bg-zinc-700 rounded"
+                  >
+                    Tirar foto
+                  </button>
+                  <button
+                    onClick={() => {
+                      galleryInputRef.current?.click();
+                      setShowImageMenu(false);
+                    }}
+                    className="block w-full text-left px-3 py-2 text-[#c9a84c] hover:bg-zinc-700 rounded"
+                  >
+                    Escolher da galeria
+                  </button>
+                </div>
+              )}
               <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <input
+                ref={galleryInputRef}
                 type="file"
                 accept="image/*"
                 onChange={handleImageUpload}
                 className="hidden"
               />
-            </label>
+            </div>
             <button
               onClick={() => sendMessage(inputText)}
               disabled={!inputText.trim() || isLoading}
-              className="p-2.5 rounded-full bg-green-500 hover:bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-2.5 rounded-full bg-[#c9a84c] hover:bg-[#b8943a] text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Send className="w-5 h-5" />
             </button>
