@@ -6,7 +6,6 @@ import { useSupabaseData } from '../hooks/useSupabaseData';
 export default function Overview() {
   const { alunoData } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const { data: provas } = useSupabaseData<any>('provas');
   const { data: questoesRespondidas, loading: loadingQuestoes } = useSupabaseData<any>('questoes_respondidas');
   const { data: materiais, loading: loadingMateriais } = useSupabaseData<any>('materiais');
 
@@ -66,19 +65,8 @@ export default function Overview() {
   };
 
   const getNextExam = () => {
-    if (!provas || provas.length === 0) return null;
-    
-    const futureExams = provas
-      .filter((p: any) => new Date(p.data_prova) > today)
-      .sort((a: any, b: any) => new Date(a.data_prova).getTime() - new Date(b.data_prova).getTime());
-    
-    if (futureExams.length === 0) return null;
-    
-    const nextExam = futureExams[0];
-    const diffTime = new Date(nextExam.data_prova).getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    return { materia: nextExam.materia, dias: diffDays, nome: nextExam.nome, data_prova: nextExam.data_prova };
+    // Temporariamente removido até a tabela provas ser criada
+    return null;
   };
 
   const subjectProgress = useMemo(() => {
