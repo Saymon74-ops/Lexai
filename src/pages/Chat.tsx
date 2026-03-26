@@ -115,7 +115,7 @@ export default function Chat() {
       }
 
       const data = await response.json();
-      const aiResponse = data.response;
+      const aiResponse = data.content;
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -208,7 +208,7 @@ export default function Chat() {
       }
 
       const data = await response.json();
-      const aiResponse = data.response;
+      const aiResponse = data.content;
 
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
