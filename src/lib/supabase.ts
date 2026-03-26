@@ -15,5 +15,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(
   supabaseUrl || 'https://projeto-ficticio.supabase.co', 
-  supabaseAnonKey || 'chave-ficticia'
+  supabaseAnonKey || 'chave-ficticia',
+  {
+    global: {
+      headers: {
+        Accept: 'application/json'
+      }
+    }
+  }
 )
